@@ -6,10 +6,9 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Not enough arguments\n");
     return 1;
   }
-  printf(".intel_syntax noprefix\n");
-  printf(".globl main\n");
-  printf("main:\n");
-  printf("  mov rax, %d\n", atoi(argv[1]));
+  printf(".globl _main\n");
+  printf("_main:\n");
+  printf("  mov x0, #%d\n", atoi(argv[1]));
   printf("  ret\n");
   return 0;
 }
