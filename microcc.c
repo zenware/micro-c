@@ -1,14 +1,142 @@
+#include <ctype.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+typedef enum {
+  TK_RESERVED,
+  TK_NUM,
+  TK_EOF, // End of File
+} TokenKind;
+
+typedef struct Token Token;
+struct Token {
+  TokenKind kind;
+  Token *next;
+  int val;
+  char *str; // TODO: Use a string implementation that carries it's length.
+};
+
+Token *token;
+
+void error(char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
+bool consume(char op) {
+  if (token->kind != TK_RESERVED || token->str[0] != op) {
+    return false;
+  }
+  token = token->next;
+  return true;
+}
+
+void expect(char op) {
+  if (token->kind != TK_RESERVED || token->str[0] != op) {
+    error("'%c' is not?", op); // TODO: Better translation from ruiu compilerbook
+  }
+  token = token->next;
+}
+
+int expect_number() {
+  if (token->kind != TK_NUM) {
+    error("not a number");
+  }
+  int val = token->val;
+  token = token->next;
+  return val;
+}
+
+bool at_eof() {
+  return token->kind == TK_EOF;
+}
+
+Token *new_token(TokenKind kind, Token *cur, char *str) {
+  Token *tok = calloc(1, sizeof(Token));
+  tok->kind = kind;
+  tok->str = str;
+  cur->next = tok;
+  return tok;
+}
+
+Token *tokenize(char *p) {
+  Token head;
+  head.next = NULL;
+  Token *cur = &head;
+
+  while (*p) {
+    if (isspace(*p)) {
+      p++;
+      continue;
+    }
+
+    if (*p == '+' || *p == '-') {
+      cur = new_token(TK_RESERVED, cur, p++);
+      continue;
+    }
+
+    if (isdigit(*p)) {
+      cur = new_token(TK_NUM, cur, p);
+      cur->val = strtol(p, &p, 10);
+      continue;
+    }
+    error("Can't tokenize");
+  }
+
+  new_token(TK_EOF, cur, p);
+  return head.next;
+}
+
+static void emit_constant(uint64_t value) {
+  printf("  movz x1, #0x%04llx\n", (unsigned long long)(value & 0xffff));
+
+  for (int shift = 16; shift < 64; shift += 16) {
+    uint64_t chunk = (value >> shift) & 0xffff;
+
+    if (chunk != 0) {
+      printf("  movk x1, #0x%04llx, lsl #%d\n", (unsigned long long)chunk, shift);
+    }
+  }
+}
 
 int main(int argc, char **argv) {
   if (argc != 2 ) {
     fprintf(stderr, "Not enough arguments\n");
     return 1;
   }
+
+  char *p = argv[1];
+  
   printf(".globl _main\n");
   printf("_main:\n");
-  printf("  mov x0, #%d\n", atoi(argv[1]));
+  emit_constant((uint64_t)strtol(p, &p, 10));
+  printf("  mov x0, x1\n");
+
+  while (*p) {
+    if (*p == '+') {
+      p++;
+      emit_constant((uint64_t)strtol(p, &p, 10));
+      printf("  add x0, x0, x1\n");
+      continue;
+    }
+
+    if (*p == '-') {
+      p++;
+      emit_constant((uint64_t)strtol(p, &p, 10));
+      printf("  sub x0, x0, x1\n");
+      continue;
+    }
+
+    fprintf(stderr, "Unexpected Character: '%c'\n", *p);
+    return 1;
+  }
   printf("  ret\n");
   return 0;
 }
