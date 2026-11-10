@@ -16,7 +16,7 @@ typedef struct Token Token;
 struct Token {
   TokenKind kind;
   Token *next;
-  int val;
+  int64_t val;
   char *str; // TODO: Use a string implementation that carries it's length.
 };
 
@@ -45,16 +45,16 @@ void expect(char op) {
   token = token->next;
 }
 
-int expect_number() {
+int64_t expect_number(void) {
   if (token->kind != TK_NUM) {
     error("not a number");
   }
-  int val = token->val;
+  int64_t val = token->val;
   token = token->next;
   return val;
 }
 
-bool at_eof() {
+bool at_eof(void) {
   return token->kind == TK_EOF;
 }
 
@@ -72,7 +72,7 @@ Token *tokenize(char *p) {
   Token *cur = &head;
 
   while (*p) {
-    if (isspace(*p)) {
+    if (isspace((unsigned char)*p)) {
       p++;
       continue;
     }
@@ -82,9 +82,9 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (isdigit(*p)) {
+    if (isdigit((unsigned char)*p)) {
       cur = new_token(TK_NUM, cur, p);
-      cur->val = strtol(p, &p, 10);
+      cur->val = strtoll(p, &p, 10);
       continue;
     }
     error("Can't tokenize");
@@ -112,30 +112,27 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  char *p = argv[1];
+  token = tokenize(argv[1]);
   
   printf(".globl _main\n");
   printf("_main:\n");
-  emit_constant((uint64_t)strtol(p, &p, 10));
+  emit_constant((uint64_t)expect_number());
   printf("  mov x0, x1\n");
 
-  while (*p) {
-    if (*p == '+') {
-      p++;
-      emit_constant((uint64_t)strtol(p, &p, 10));
+  while (!at_eof()) {
+    if (consume('+')) {
+      emit_constant((uint64_t)expect_number());
       printf("  add x0, x0, x1\n");
       continue;
     }
 
-    if (*p == '-') {
-      p++;
-      emit_constant((uint64_t)strtol(p, &p, 10));
+    if (consume('-')) {
+      emit_constant((uint64_t)expect_number());
       printf("  sub x0, x0, x1\n");
       continue;
     }
 
-    fprintf(stderr, "Unexpected Character: '%c'\n", *p);
-    return 1;
+    error("unexpected token");
   }
   printf("  ret\n");
   return 0;
