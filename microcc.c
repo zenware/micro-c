@@ -6,6 +6,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+char *user_input;
+
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, " ");
+  fprintf(stderr, "^ ");
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
 typedef enum {
   TK_RESERVED,
   TK_NUM,
@@ -40,14 +55,14 @@ bool consume(char op) {
 
 void expect(char op) {
   if (token->kind != TK_RESERVED || token->str[0] != op) {
-    error("'%c' is not?", op); // TODO: Better translation from ruiu compilerbook
+    error_at(token->str, "expected '%c'", op); // TODO: Better translation from ruiu compilerbook
   }
   token = token->next;
 }
 
 int64_t expect_number(void) {
   if (token->kind != TK_NUM) {
-    error("not a number");
+    error_at(token->str, "expected a number");
   }
   int64_t val = token->val;
   token = token->next;
@@ -66,7 +81,8 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
   return tok;
 }
 
-Token *tokenize(char *p) {
+Token *tokenize(void) {
+  char *p = user_input; // NOTE: Depends on a global.
   Token head;
   head.next = NULL;
   Token *cur = &head;
@@ -87,7 +103,7 @@ Token *tokenize(char *p) {
       cur->val = strtoll(p, &p, 10);
       continue;
     }
-    error("Can't tokenize");
+    error_at(p, "expected a number");
   }
 
   new_token(TK_EOF, cur, p);
@@ -112,7 +128,8 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  token = tokenize(argv[1]);
+  user_input = argv[1];
+  token = tokenize();
   
   printf(".globl _main\n");
   printf("_main:\n");
