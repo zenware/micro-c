@@ -2,8 +2,8 @@ CC       = clang
 CFLAGS   = -std=c11 -Wall -Wextra -Wpedantic -g
 LDFLAGS  =
 
-TARGET   = one_integer
-SOURCE   = one_integer.c
+TARGET   = microcc
+SOURCE   = microcc.c
 TEST     = test.sh
 
 .PHONY: all test clean

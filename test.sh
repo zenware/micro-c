@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-SOURCE="one_integer.c"
-COMPILER="./one_integer"
+SOURCE="microcc.c"
+COMPILER="./microcc"
 ASSEMBLY="generated.s"
 EXECUTABLE="./generated"
 
