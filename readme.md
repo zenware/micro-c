@@ -9,4 +9,10 @@ I would also like to self-bootstrap as early as possible. In that sense, the
 start of this project can be considered a search for the subset of C required
 to create a compiler for itself.
 
-I am following along with the [compiler book](https://www.sigbus.info/compilerbook) written by the author of chibicc, however I am developing from an M1 Mac, and Mac is already explicitly not supported by the book due to not supporting static linking. I will try to get around that by compiling to LLVM-IR as my compilation target.
+
+## Resources
+- I am following along with the [compiler book](https://www.sigbus.info/compilerbook) written by the author of chibicc
+  - However I am developing from an M-Series Mac, and Mac is already explicitly not supported by the book due to not supporting static linking.
+  - Despite that I'm writing aarch64-darwin assembly as my output until it breaks.
+  - I'm also considering LLVM-IR or something like fasmg macro-assembly as my compilation target.
+- https://bernsteinbear.com/blog/linear-scan/
